@@ -6,6 +6,9 @@ import { router } from "./routes";  // Import the router configuration
 import { StoreProvider } from './hooks/useGlobalReducer';  // Import the StoreProvider for global state management
 import { BackendURL } from './components/BackendURL';
 
+import "bootstrap/dist/css/bootstrap.min.css";
+import "bootstrap/dist/js/bootstrap.bundle.min";
+
 const Main = () => {
     
     if(! import.meta.env.VITE_BACKEND_URL ||  import.meta.env.VITE_BACKEND_URL == "") return (
@@ -26,4 +29,13 @@ const Main = () => {
 }
 
 // Render the Main component into the root DOM element.
-ReactDOM.createRoot(document.getElementById('root')).render(<Main />)
+ReactDOM.createRoot(document.getElementById('root')).render(
+<React.StrictMode>
+        <StoreProvider>
+            <RouterProvider 
+                router={router} 
+                future={{ v7_startTransition: true }} 
+            />
+        </StoreProvider>
+    </React.StrictMode>,
+);
