@@ -5,13 +5,15 @@ const getState = ({ getStore, getActions, setStore }) => {
             user: null,
             people: [],
             planets: [],
+            vehicles: [],
+            spaceships: [], 
+            species: [], 
+            films: [],
             favorites: [],
             todos: [],
             message: null
         },
-        actions: {
-            // --- AUTHENTICATION ---
-            
+        actions: {          
             syncTokenFromSessionStore: () => {
                 const token = sessionStorage.getItem("token");
                 if (token && token !== "" && token !== undefined) {
@@ -64,30 +66,37 @@ const getState = ({ getStore, getActions, setStore }) => {
                 return true;
             },
 
-            getPeople: async () => {
+            loadData: async (type) => {
+                const store = getStore();
                 const backendUrl = import.meta.env.VITE_BACKEND_URL;
-                const resp = await fetch(backendUrl + "/api/people");
-                if (!resp.ok) {
-                    console.error("Error loading people");
-                    return;
-                }
 
-                const data = await resp.json();
-                setStore({ people: data });
+                try {
+                    const resp = await fetch(backendUrl + "/api/" + type);
+                    if (!resp.ok) {
+                        console.error("Error loading " + type);
+                        return;
+                    }
+                    const data = await resp.json();
+                    
+                    let storeKey = type + "s";
+                    if (type === "people") storeKey = "people";
+                    else if (type === "species") storeKey = "species";
+
+                    setStore({ [storeKey]: data });
+                } catch (error) {
+                    console.error("Error loading " + type, error);
+                }
             },
 
-            getPlanets: async () => {
-                const backendUrl = import.meta.env.VITE_BACKEND_URL;
-                const resp = await fetch(backendUrl + "/api/planets");
-                if (!resp.ok) {
-                    console.error("Error loading planets");
-                    return;
-                }
-
-                const data = await resp.json();
-                setStore({ planets: data });
+            loadAllStarWars: () => {
+                const actions = getActions();
+                actions.loadData('people');
+                actions.loadData('planet');
+                actions.loadData('vehicle');
+                actions.loadData('spaceship');
+                actions.loadData('species');
+                actions.loadData('film');
             },
-
             getFavorites: async () => {
                 const store = getStore();
                 const backendUrl = import.meta.env.VITE_BACKEND_URL;
@@ -150,16 +159,16 @@ const getState = ({ getStore, getActions, setStore }) => {
                 if (resp.ok) {
                     actions.getFavorites();
                 } else {
-                    console.error("Error adding favorite people");
+                    console.error("Error al añadir favorito");
                 }
             },
 
-            deleteFavoritePlanet: async (planetId) => {
+            deleteFavorite: async (type, id) => {
                 const store = getStore();
                 const actions = getActions();
                 const backendUrl = import.meta.env.VITE_BACKEND_URL;
 
-                const resp = await fetch(backendUrl + "/api/favorite/planet/" + planetId, {
+                const resp = await fetch(backendUrl + `/api/favorite/${type}/${id}`, {
                     method: "DELETE",
                     headers: { "Authorization": "Bearer " + store.token }
                 });
@@ -167,24 +176,7 @@ const getState = ({ getStore, getActions, setStore }) => {
                 if (resp.ok) {
                     actions.getFavorites();
                 } else {
-                    console.error("Error deleting favorite");
-                }
-            },
-
-            deleteFavoritePeople: async (peopleId) => {
-                const store = getStore();
-                const actions = getActions();
-                const backendUrl = import.meta.env.VITE_BACKEND_URL;
-
-                const resp = await fetch(backendUrl + "/api/favorite/people/" + peopleId, {
-                    method: "DELETE",
-                    headers: { "Authorization": "Bearer " + store.token }
-                });
-
-                if (resp.ok) {
-                    actions.getFavorites();
-                } else {
-                    console.error("Error deleting favorite");
+                    console.error("Error al borrar favorito");
                 }
             },
 

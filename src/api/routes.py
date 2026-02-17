@@ -2,7 +2,7 @@
 This module takes care of starting the API Server, Loading the DB and Adding the endpoints
 """
 from flask import Flask, request, jsonify, url_for, Blueprint
-from api.models import db, User, People, Planet, Favorite, Todo
+from api.models import db, User, People, Planet, Vehicle, Spaceship, Species, Film, Favorite, Todo
 from api.utils import APIException
 from flask_cors import CORS
 from flask_jwt_extended import create_access_token, get_jwt_identity, jwt_required
@@ -40,30 +40,57 @@ def create_token():
     return jsonify({ "token": access_token, "user_id": user.id })
 
 # --- STARWARS PUBLIC ENDPOINTS ---
+def generate_endpoints(Model, route_name):
+    @api.route(f'/{route_name}', methods=['GET'])
+    def get_all_items():
+        items = db.session.execute(db.select(Model)).scalars()
+        return jsonify([item.serialize() for item in items]), 200
 
-@api.route('/people', methods=['GET'])
-def get_people():
-    people_list = db.session.execute(db.select(People)).scalars()
-    return jsonify([person.serialize() for person in people_list]), 200
+    @api.route(f'/{route_name}/<int:id>', methods=['GET'])
+    def get_single_item(id):
+        item = db.session.get(Model, id)
+        if not item: return jsonify({"msg": "Not found"}), 404
+        return jsonify(item.serialize()), 200
 
-@api.route('/people/<int:people_id>', methods=['GET'])
-def get_person(people_id):
-    person = db.session.get(People, people_id)
-    if not person:
-        return jsonify({"msg": "Person not found"}), 404
-    return jsonify(person.serialize()), 200
+    @api.route(f'/favorite/{route_name}/<int:id>', methods=['POST'])
+    @jwt_required()
+    def add_fav(id):
+        current_user_id = get_jwt_identity()
+        item = db.session.get(Model, id)
+        if not item: return jsonify({"msg": "Not found"}), 404
+        
+        filter_kwargs = {'user_id': current_user_id, f'{route_name}_id': id}
+        exists = db.session.execute(db.select(Favorite).filter_by(**filter_kwargs)).scalar_one_or_none()
+        if exists: return jsonify({"msg": "Favorite already exists"}), 400
+        
+        new_fav = Favorite(**filter_kwargs)
+        db.session.add(new_fav)
+        db.session.commit()
+        return jsonify({"msg": "Added to favorites"}), 201
 
-@api.route('/planets', methods=['GET'])
-def get_planets():
-    planets_list = db.session.execute(db.select(Planet)).scalars()
-    return jsonify([planet.serialize() for planet in planets_list]), 200
+    @api.route(f'/favorite/{route_name}/<int:id>', methods=['DELETE'])
+    @jwt_required()
+    def delete_fav(id):
+        current_user_id = get_jwt_identity()
+        filter_kwargs = {'user_id': current_user_id, f'{route_name}_id': id}
+        fav = db.session.execute(db.select(Favorite).filter_by(**filter_kwargs)).scalar_one_or_none()
+        if not fav: return jsonify({"msg": "Favorite not found"}), 404
+        
+        db.session.delete(fav)
+        db.session.commit()
+        return jsonify({"msg": "Favorite deleted"}), 200
 
-@api.route('/planets/<int:planet_id>', methods=['GET'])
-def get_planet(planet_id):
-    planet = db.session.get(Planet, planet_id)
-    if not planet:
-        return jsonify({"msg": "Planet not found"}), 404
-    return jsonify(planet.serialize()), 200
+    get_all_items.__name__ = f'get_{route_name}s'
+    get_single_item.__name__ = f'get_{route_name}'
+    add_fav.__name__ = f'add_fav_{route_name}'
+    delete_fav.__name__ = f'delete_fav_{route_name}'
+
+generate_endpoints(People, 'people')
+generate_endpoints(Planet, 'planet')
+generate_endpoints(Vehicle, 'vehicle')
+generate_endpoints(Spaceship, 'spaceship')
+generate_endpoints(Species, 'species')
+generate_endpoints(Film, 'film')
 
 # --- FAVORITES ---
 
@@ -73,68 +100,6 @@ def get_user_favorites():
     current_user_id = get_jwt_identity()
     user = db.session.get(User, current_user_id)
     return jsonify([fav.serialize() for fav in user.favorites]), 200
-
-@api.route('/favorite/planet/<int:planet_id>', methods=['POST'])
-@jwt_required()
-def add_favorite_planet(planet_id):
-    current_user_id = get_jwt_identity()
-    
-    planet = db.session.get(Planet, planet_id)
-    if not planet:
-        return jsonify({"msg": "Planet not found"}), 404
-
-    exists = db.session.execute(db.select(Favorite).filter_by(user_id=current_user_id, planet_id=planet_id)).scalar_one_or_none()
-    if exists:
-        return jsonify({"msg": "Favorite already exists"}), 400
-
-    new_fav = Favorite(user_id=current_user_id, planet_id=planet_id)
-    db.session.add(new_fav)
-    db.session.commit()
-    return jsonify({"msg": "Planet added to favorites"}), 201
-
-@api.route('/favorite/people/<int:people_id>', methods=['POST'])
-@jwt_required()
-def add_favorite_people(people_id):
-    current_user_id = get_jwt_identity()
-    
-    person = db.session.get(People, people_id)
-    if not person:
-        return jsonify({"msg": "Person not found"}), 404
-
-    exists = db.session.execute(db.select(Favorite).filter_by(user_id=current_user_id, people_id=people_id)).scalar_one_or_none()
-    if exists:
-        return jsonify({"msg": "Favorite already exists"}), 400
-
-    new_fav = Favorite(user_id=current_user_id, people_id=people_id)
-    db.session.add(new_fav)
-    db.session.commit()
-    return jsonify({"msg": "Person added to favorites"}), 201
-
-@api.route('/favorite/planet/<int:planet_id>', methods=['DELETE'])
-@jwt_required()
-def delete_favorite_planet(planet_id):
-    current_user_id = get_jwt_identity()
-    fav = db.session.execute(db.select(Favorite).filter_by(user_id=current_user_id, planet_id=planet_id)).scalar_one_or_none()
-    
-    if not fav:
-        return jsonify({"msg": "Favorite not found"}), 404
-    
-    db.session.delete(fav)
-    db.session.commit()
-    return jsonify({"msg": "Favorite deleted"}), 200
-
-@api.route('/favorite/people/<int:people_id>', methods=['DELETE'])
-@jwt_required()
-def delete_favorite_people(people_id):
-    current_user_id = get_jwt_identity()
-    fav = db.session.execute(db.select(Favorite).filter_by(user_id=current_user_id, people_id=people_id)).scalar_one_or_none()
-    
-    if not fav:
-        return jsonify({"msg": "Favorite not found"}), 404
-    
-    db.session.delete(fav)
-    db.session.commit()
-    return jsonify({"msg": "Favorite deleted"}), 200
 
 # --- TODO LIST ---
 

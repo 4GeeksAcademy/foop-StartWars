@@ -1,6 +1,7 @@
 
 import click
-from api.models import db, User, People, Planet
+from api.models import db, User, People, Planet, Vehicle, Spaceship, Species, Film, Favorite
+import requests
 
 """
 In this file, you can add as many commands as you want using the @app.cli.command decorator
@@ -14,46 +15,68 @@ def setup_commands(app):
     by typing: $ flask insert-test-users 5
     Note: 5 is the number of users to add
     """
-    @app.cli.command("insert-test-users") # name of our command
-    @click.argument("count") # argument of out command
-    def insert_test_users(count):
-        print("Creating test users")
-        for x in range(1, int(count) + 1):
-            user = User()
-            user.email = "test_user" + str(x) + "@test.com"
-            user.password = "123456"
-            user.is_active = True
-            db.session.add(user)
-            db.session.commit()
-            print("User: ", user.email, " created.")
-
-        print("All test users created")
-
     @app.cli.command("insert-test-data")
     def insert_test_data():
-        pass
-        print("Creating test data")
-        
-        # Check if data already exists to avoid duplicates
-        if db.session.query(User).count() > 0:
-            print("Data already exists. Skipping insertion.")
-            return
+        print("--- 🚀 Iniciando Inyección Masiva de Datos ---")
 
-        # Users
-        test_user = User(email="test@test.com", password="123", is_active=True)
-        db.session.add(test_user)
+        # 1. Usuario Base
+        if not db.session.execute(db.select(User).filter_by(email="test@test.com")).scalar_one_or_none():
+            user = User(email="test@test.com", 
+                        password="123", 
+                        is_active=True)
+            db.session.add(user)
+            print("✅ Usuario creado.")
+
+        def fetch_and_save(url, Model, mapping_func, name_key='name'):
+            try:
+                print(f"📡 Conectando a {url}...")
+                response = requests.get(url)
+                data = response.json()
+                results = data.get('results', []) or data.get('result', [])
+                
+                count = 0
+                for item in results:                    
+                    if name_key == 'title':
+                         check_val = item['properties']['title'] if 'properties' in item else item['title']
+                         exists = db.session.execute(db.select(Model).filter_by(title=check_val)).scalar_one_or_none()
+                    else:
+                        check_val = item['properties']['name'] if 'properties' in item else item['name']
+                        exists = db.session.execute(db.select(Model).filter_by(name=check_val)).scalar_one_or_none()
+                    
+                    if not exists:
+                        props = item.get('properties', item) 
+                        new_obj = mapping_func(props)
+                        db.session.add(new_obj)
+                        count += 1
+                
+                db.session.commit()
+                print(f"✅ {count} registros agregados para {Model.__tablename__}.")
+            except Exception as e:
+                print(f"❌ Error en {Model.__tablename__}: {e}")
+                db.session.rollback()
 
         # People
-        luke = People(id=1, name="Luke Skywalker", height="172", mass="77", hair_color="blond")
-        c3po = People(id=2, name="C-3PO", height="167", mass="75", hair_color="gold")
-        r2d2 = People(id=3, name="R2-D2", height="96", mass="32", hair_color="n/a")
-        db.session.add_all([luke, c3po, r2d2])
+        fetch_and_save("https://www.swapi.tech/api/people?page=1&limit=10", People, 
+            lambda p: People(name=p['name'], height=p.get('height'), mass=p.get('mass'), hair_color=p.get('hair_color')))
 
         # Planets
-        tatooine = Planet(id=1, name="Tatooine", climate="arid", terrain="desert", population="200000")
-        alderaan = Planet(id=2, name="Alderaan", climate="temperate", terrain="grasslands, mountains", population="2000000000")
-        yavin = Planet(id=3, name="Yavin IV", climate="temperate, tropical", terrain="jungle, rainforests", population="1000")
-        db.session.add_all([tatooine, alderaan, yavin])
+        fetch_and_save("https://www.swapi.tech/api/planets?page=1&limit=10", Planet,
+            lambda p: Planet(name=p['name'], climate=p.get('climate'), terrain=p.get('terrain'), population=p.get('population')))
 
-        db.session.commit()
-        print("Test data created successfully")
+        # Vehicles
+        fetch_and_save("https://www.swapi.tech/api/vehicles?page=1&limit=10", Vehicle,
+            lambda p: Vehicle(name=p['name'], model=p.get('model'), manufacturer=p.get('manufacturer')))
+
+        # Spaceships (Starships en SWAPI)
+        fetch_and_save("https://www.swapi.tech/api/starships?page=1&limit=10", Spaceship,
+            lambda p: Spaceship(name=p['name'], model=p.get('model'), starship_class=p.get('starship_class')))
+
+        # Species
+        fetch_and_save("https://www.swapi.tech/api/species?page=1&limit=10", Species,
+            lambda p: Species(name=p['name'], classification=p.get('classification'), language=p.get('language')))
+
+        # Films
+        fetch_and_save("https://www.swapi.tech/api/films", Film,
+            lambda p: Film(title=p['title'], director=p.get('director'), opening_crawl=p.get('opening_crawl')), name_key='title')
+
+        print("--- 🏁 Inyección Completa ---")

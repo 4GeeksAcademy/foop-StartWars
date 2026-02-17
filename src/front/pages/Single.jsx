@@ -7,126 +7,126 @@ export const Single = ({ type }) => {
     const { theid } = useParams();
     const [item, setItem] = useState(null);
 
-    useEffect(() => {
-        if (type === "people" && store.people.length === 0) {
-            actions.getPeople();
-        }
-        if (type === "planet" && store.planets.length === 0) {
-            actions.getPlanets();
-        }
-    }, []);
+    const fieldConfig = {
+        people: [
+            { label: "Birth Year", key: "birth_year" },
+            { label: "Gender", key: "gender" },
+            { label: "Height", key: "height" },
+            { label: "Skin Color", key: "skin_color" },
+            { label: "Eye Color", key: "eye_color" }
+        ],
+        planet: [
+            { label: "Climate", key: "climate" },
+            { label: "Population", key: "population" },
+            { label: "Terrain", key: "terrain" },
+            { label: "Diameter", key: "diameter" },
+            { label: "Orbital Period", key: "orbital_period" }
+        ],
+        vehicle: [
+            { label: "Model", key: "model" },
+            { label: "Manufacturer", key: "manufacturer" },
+            { label: "Class", key: "vehicle_class" },
+            { label: "Cost", key: "cost_in_credits" },
+            { label: "Speed", key: "max_atmosphering_speed" }
+        ],
+        spaceship: [
+            { label: "Model", key: "model" },
+            { label: "Class", key: "starship_class" },
+            { label: "Hyperdrive Rating", key: "hyperdrive_rating" },
+            { label: "Cost", key: "cost_in_credits" },
+            { label: "Manufacturer", key: "manufacturer" }
+        ],
+        species: [
+            { label: "Classification", key: "classification" },
+            { label: "Language", key: "language" },
+            { label: "Avg Height", key: "average_height" },
+            { label: "Lifespan", key: "average_lifespan" },
+            { label: "Designation", key: "designation" }
+        ],
+        film: [
+            { label: "Director", key: "director" },
+            { label: "Producer", key: "producer" },
+            { label: "Release Date", key: "release_date" },
+            { label: "Episode", key: "episode_id" }
+        ]
+    };
+
+    const getImageUrl = () => {
+        const base = "https://starwars-visualguide.com/assets/img";
+        let imgType = type;
+        
+        if (type === 'people') imgType = 'characters';
+        if (type === 'spaceship') imgType = 'starships';
+        if (type === 'planet') imgType = 'planets';
+        if (type === 'vehicle') imgType = 'vehicles';
+        if (type === 'film') imgType = 'films';
+        if (type === 'species') imgType = 'species';
+
+        return `${base}/${imgType}/${theid}.jpg`;
+    };
 
     useEffect(() => {
-        let foundItem = null;
-        if (type === "people") {
-            foundItem = store.people.find(p => p.id == theid);
-        } else if (type === "planet") {
-            foundItem = store.planets.find(p => p.id == theid);
+        const storeKey = type === 'people' || type === 'species' ? type : type + 's'; 
+        
+        if (store[storeKey] && store[storeKey].length === 0) {
+            actions.loadData(type);
         }
-        setItem(foundItem);
-    }, [store.people, store.planets, theid, type]);
+        
+        if (store[storeKey]) {
+            const found = store[storeKey].find(element => element.id == theid);
+            setItem(found);
+        }
+    }, [store, type, theid]);
 
     if (!item) {
         return (
             <div className="container text-center mt-5 text-warning">
-                <h1>Buscando en los archivos... <i className="fas fa-spinner fa-spin"></i></h1>
+                <h1>Cargando datos del Holocrón... <i className="fas fa-spinner fa-spin"></i></h1>
             </div>
         );
     }
-
-    const imageUrl = type === "people" 
-        ? `https://starwars-visualguide.com/assets/img/characters/${theid}.jpg`
-        : `https://starwars-visualguide.com/assets/img/planets/${theid}.jpg`;
-    
-    const handleImageError = (e) => {
-        e.target.src = "https://starwars-visualguide.com/assets/img/placeholder.jpg";
-    };
 
     return (
         <div className="container mt-5">
             <div className="row">
                 <div className="col-md-6 d-flex justify-content-center">
                     <img 
-                        src={imageUrl} 
+                        src={getImageUrl()} 
                         className="img-fluid rounded border border-warning shadow-lg" 
-                        alt={item.name} 
-                        style={{ maxHeight: "400px" }}
-                        onError={handleImageError}
+                        alt={item.name || item.title} 
+                        style={{ maxHeight: "500px", objectFit: "cover" }}
+                        onError={(e) => { e.target.src = "https://starwars-visualguide.com/assets/img/placeholder.jpg" }}
                     />
                 </div>
                 <div className="col-md-6 text-center text-md-start">
-                    <h1 className="display-4 text-warning fw-bold">{item.name}</h1>
+                    <h1 className="display-4 text-warning fw-bold">{item.name || item.title}</h1>
                     <p className="lead text-light mt-4">
-                        Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. 
-                        Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. 
+                        {item.opening_crawl 
+                            ? item.opening_crawl 
+                            : `Lorem ipsum dolor sit amet, consectetur adipiscing elit. Este es un registro detallado de ${item.name || item.title} en los archivos de la Alianza Rebelde. Información clasificada recuperada de los servidores imperiales.`
+                        }
                     </p>
                 </div>
             </div>
 
             <hr className="my-5 border-warning" />
 
-            <div className="row text-danger text-center fw-bold">
-                {type === "people" ? (
-                    <>
-                        <div className="col-md-2 col-4 mb-3">
-                            <span className="d-block text-warning h6">Name</span>
-                            {item.name}
-                        </div>
-                        <div className="col-md-2 col-4 mb-3">
-                            <span className="d-block text-warning h6">Birth Year</span>
-                            {item.birth_year || "N/A"}
-                        </div>
-                        <div className="col-md-2 col-4 mb-3">
-                            <span className="d-block text-warning h6">Gender</span>
-                            {item.gender || "N/A"}
-                        </div>
-                        <div className="col-md-2 col-4 mb-3">
-                            <span className="d-block text-warning h6">Height</span>
-                            {item.height} cm
-                        </div>
-                        <div className="col-md-2 col-4 mb-3">
-                            <span className="d-block text-warning h6">Skin Color</span>
-                            {item.skin_color || "N/A"}
-                        </div>
-                        <div className="col-md-2 col-4 mb-3">
-                            <span className="d-block text-warning h6">Eye Color</span>
-                            {item.eye_color || "N/A"}
-                        </div>
-                    </>
-                ) : (
-                    <>
-                         <div className="col-md-2 col-4 mb-3">
-                            <span className="d-block text-warning h6">Name</span>
-                            {item.name}
-                        </div>
-                        <div className="col-md-2 col-4 mb-3">
-                            <span className="d-block text-warning h6">Climate</span>
-                            {item.climate}
-                        </div>
-                        <div className="col-md-2 col-4 mb-3">
-                            <span className="d-block text-warning h6">Population</span>
-                            {item.population}
-                        </div>
-                        <div className="col-md-2 col-4 mb-3">
-                            <span className="d-block text-warning h6">Orbital Period</span>
-                            {item.orbital_period || "N/A"}
-                        </div>
-                        <div className="col-md-2 col-4 mb-3">
-                            <span className="d-block text-warning h6">Rotation Period</span>
-                            {item.rotation_period || "N/A"}
-                        </div>
-                        <div className="col-md-2 col-4 mb-3">
-                            <span className="d-block text-warning h6">Diameter</span>
-                            {item.diameter || "N/A"}
-                        </div>
-                    </>
-                )}
+            <div className="row text-danger text-center fw-bold bg-dark py-3 rounded border border-secondary">
+                {fieldConfig[type]?.map((field, index) => (
+                    <div key={index} className="col-md-2 col-6 mb-3 border-end border-secondary">
+                        <span className="d-block text-warning h6 text-uppercase">{field.label}</span>
+                        <span className="text-white small">
+                            {item[field.key] || "N/A"}
+                        </span>
+                    </div>
+                ))}
             </div>
 
             <div className="text-center mt-5 mb-5">
                 <Link to="/">
                     <button className="btn btn-outline-warning btn-lg hover-glow">
-                        Back to Home
+                        <i className="fas fa-space-shuttle me-2"></i>
+                        Regresar a la Base
                     </button>
                 </Link>
             </div>

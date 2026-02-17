@@ -1,30 +1,28 @@
-// Import necessary components and functions from react-router-dom.
-
-import {
-    createBrowserRouter,
-    createRoutesFromElements,
-    Route,
+import { 
+    Route, 
+    createBrowserRouter, 
+    createRoutesFromElements 
 } from "react-router-dom";
 import { Layout } from "./pages/Layout";
 import { Home } from "./pages/Home";
 import { Login } from "./pages/Login";
+import { ForgotPassword } from "./pages/ForgotPassword";
 import { Single } from "./pages/Single";
 import { TodoList } from "./pages/TodoList";
-import { ForgotPassword } from "./pages/ForgotPassword";
 
 export const router = createBrowserRouter(
     createRoutesFromElements(
         <Route path="/" element={<Layout />}>
             <Route path="/" element={<Home />} />
             <Route path="/login" element={<Login />} />
-            <Route path="/forgot-password" element={<ForgotPassword />} /> {/* <--- NUEVA RUTA */}
-            
-            {/* Rutas dinámicas */}
+            <Route path="/forgot-password" element={<ForgotPassword />} />
+            <Route path="/todos" element={<TodoList />} />
             <Route path="/people/:theid" element={<Single type="people" />} />
             <Route path="/planets/:theid" element={<Single type="planet" />} />
-            
-            <Route path="/todos" element={<TodoList />} />
-            
+            <Route path="/vehicles/:theid" element={<Single type="vehicle" />} />
+            <Route path="/spaceships/:theid" element={<Single type="spaceship" />} />
+            <Route path="/speciess/:theid" element={<Single type="species" />} /> 
+            <Route path="/films/:theid" element={<Single type="film" />} />
             <Route path="*" element={<h1 className="text-center mt-5 text-warning">Not found!</h1>} />
         </Route>
     ),
