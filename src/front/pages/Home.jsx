@@ -1,9 +1,11 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import useGlobalReducer from "../hooks/useGlobalReducer";
+import { DetailsModal } from "../components/DetailsModal";
 
 const SectionRow = ({ title, data = [], type, actions, favorites }) => {
-    
+    const [selectedItem, setSelectedItem] = useState(null);
+    const [showModal, setShowModal] = useState(false);
 	const safeData = Array.isArray(data) ? data : [];
 
     const isFav = (id) => favorites.some(fav => fav[type]?.id === id);
@@ -12,7 +14,15 @@ const SectionRow = ({ title, data = [], type, actions, favorites }) => {
         if (type === 'people') return 'characters';
         if (type === 'spaceship') return 'starships';
         if (type === 'species') return 'species';
+		if (type === 'planet') return 'planets';
+		if (type === 'vehicle') return 'vehicles';
+		if (type === 'film') return 'films';
         return type + 's';
+    };
+
+	const handleCardClick = (item) => {
+        setSelectedItem(item);
+        setShowModal(true);
     };
 
 return (
@@ -21,7 +31,6 @@ return (
                 {title}
             </h2>
             <div className="d-flex flex-row flex-nowrap overflow-auto pb-4 gap-3 custom-scrollbar">
-                {/* Usamos safeData en lugar de data */}
                 {safeData.length === 0 ? (
                     <div className="text-muted">
                         Cargando {title.toLowerCase()}... <i className="fas fa-spinner fa-spin"></i>
@@ -77,9 +86,25 @@ return (
 export const Home = () => {
     const { store, actions } = useGlobalReducer();
 
+	const [modalData, setModalData] = useState({ 
+		show: false, 
+		item: null, 
+		type: null 
+	});
+
     useEffect(() => {
         actions.loadAllStarWars(); 
     }, []);
+
+	const handleCardClick = (item) => {
+        setModalData({ show: true, item, type });
+    };
+
+	const closeModal = () => setModalData({
+		show: false, 
+		item: null, 
+		type: null 
+	});
 
     return (
         <div className="container-fluid mt-4 pb-5 bg-black" style={{ minHeight: "100vh" }}>
@@ -89,6 +114,12 @@ export const Home = () => {
             <SectionRow title="Vehículos" data={store.vehicles} type="vehicle" actions={actions} favorites={store.favorites} />
             <SectionRow title="Especies" data={store.species} type="species" actions={actions} favorites={store.favorites} />
             <SectionRow title="Películas" data={store.films} type="film" actions={actions} favorites={store.favorites} />
+			<DetailsModal 
+				show={modalData.show} 
+				onClose={closeModal} 
+				item={modalData.item} 
+				type={modalData.type}
+			/>
         </div>
     );
 };
