@@ -14,7 +14,11 @@ export const TodoList = () => {
     }, [store.token]);
 
     const handleKeyDown = (e) => {
-        if (e.key === "Enter" && inputValue.trim() !== "") {
+        if (e.key === "Enter") {
+            if (inputValue.trim() === "") {
+                alert("La misión no puede estar vacía, soldado.");
+                return;
+            }
             actions.addTodo(inputValue);
             setInputValue("");
         }
@@ -45,7 +49,7 @@ export const TodoList = () => {
                 <div className="col-md-8">
                     <div className="card bg-black border-warning shadow-lg">
                         <div className="card-body p-0">
-                            
+
                             <input
                                 type="text"
                                 className="form-control bg-dark text-white border-0 p-3 fs-5"
@@ -70,11 +74,11 @@ export const TodoList = () => {
                                             onMouseLeave={() => setHoveredIndex(null)}
                                         >
                                             <span className="fs-5">{todo.label}</span>
-                                            
-                                            <span 
+
+                                            <span
                                                 onClick={() => actions.deleteTodo(todo.id)}
                                                 className="hover-effect"
-                                                style={{ 
+                                                style={{
                                                     cursor: "pointer",
                                                     visibility: hoveredIndex === index ? "visible" : "hidden",
                                                     transition: "color 0.3s"
@@ -86,7 +90,7 @@ export const TodoList = () => {
                                     ))
                                 )}
                             </ul>
-                            
+
                             <div className="card-footer bg-dark text-secondary border-top border-secondary small">
                                 {store.todos.length} item{store.todos.length !== 1 ? "s" : ""} left
                             </div>
