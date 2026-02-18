@@ -51,27 +51,27 @@ export const Single = ({ type }) => {
         ]
     };
 
-    const getImageUrl = () => {
-        const base = "https://starwars-visualguide.com/assets/img";
-        let imgType = type;
-        
-        if (type === 'people') imgType = 'characters';
-        if (type === 'spaceship') imgType = 'starships';
-        if (type === 'planet') imgType = 'planets';
-        if (type === 'vehicle') imgType = 'vehicles';
-        if (type === 'film') imgType = 'films';
-        if (type === 'species') imgType = 'species';
+    const getImgPath = (type) => {
+        if (type === 'people') return 'characters';
+        if (type === 'spaceship') return 'starships';
+        if (type === 'species') return 'species';
+        if (type === 'planet') return 'planets';
+        if (type === 'vehicle') return 'vehicles';
+        if (type === 'film') return 'films';
+        return type + 's';
+    };
 
-        return `${base}/${imgType}/${theid}.jpg`;
+    const getImageUrl = () => {
+        return `/img/${getImgPath(type)}/${theid}.jpg`;
     };
 
     useEffect(() => {
-        const storeKey = type === 'people' || type === 'species' ? type : type + 's'; 
-        
+        const storeKey = type === 'people' || type === 'species' ? type : type + 's';
+
         if (store[storeKey] && store[storeKey].length === 0) {
             actions.loadData(type);
         }
-        
+
         if (store[storeKey]) {
             const found = store[storeKey].find(element => element.id == theid);
             setItem(found);
@@ -90,19 +90,19 @@ export const Single = ({ type }) => {
         <div className="container mt-5">
             <div className="row">
                 <div className="col-md-6 d-flex justify-content-center">
-                    <img 
-                        src={getImageUrl()} 
-                        className="img-fluid rounded border border-warning shadow-lg" 
-                        alt={item.name || item.title} 
+                    <img
+                        src={getImageUrl()}
+                        className="img-fluid rounded border border-warning shadow-lg"
+                        alt={item.name || item.title}
                         style={{ maxHeight: "500px", objectFit: "cover" }}
-                        onError={(e) => { e.target.src = "https://starwars-visualguide.com/assets/img/placeholder.jpg" }}
+                        onError={(e) => { e.target.src = "https://raw.githubusercontent.com/tbone849/star-wars-guide/master/build/assets/img/big-placeholder.jpg" }}
                     />
                 </div>
                 <div className="col-md-6 text-center text-md-start">
                     <h1 className="display-4 text-warning fw-bold">{item.name || item.title}</h1>
                     <p className="lead text-light mt-4">
-                        {item.opening_crawl 
-                            ? item.opening_crawl 
+                        {item.opening_crawl
+                            ? item.opening_crawl
                             : `Lorem ipsum dolor sit amet, consectetur adipiscing elit. Este es un registro detallado de ${item.name || item.title} en los archivos de la Alianza Rebelde. Información clasificada recuperada de los servidores imperiales.`
                         }
                     </p>

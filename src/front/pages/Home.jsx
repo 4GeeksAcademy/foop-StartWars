@@ -6,26 +6,26 @@ import { DetailsModal } from "../components/DetailsModal";
 const SectionRow = ({ title, data = [], type, actions, favorites }) => {
     const [selectedItem, setSelectedItem] = useState(null);
     const [showModal, setShowModal] = useState(false);
-	const safeData = Array.isArray(data) ? data : [];
+    const safeData = Array.isArray(data) ? data : [];
 
     const isFav = (id) => favorites.some(fav => fav[type]?.id === id);
 
-	const getImgPath = (type) => {
+    const getImgPath = (type) => {
         if (type === 'people') return 'characters';
         if (type === 'spaceship') return 'starships';
         if (type === 'species') return 'species';
-		if (type === 'planet') return 'planets';
-		if (type === 'vehicle') return 'vehicles';
-		if (type === 'film') return 'films';
+        if (type === 'planet') return 'planets';
+        if (type === 'vehicle') return 'vehicles';
+        if (type === 'film') return 'films';
         return type + 's';
     };
 
-	const handleCardClick = (item) => {
+    const handleCardClick = (item) => {
         setSelectedItem(item);
         setShowModal(true);
     };
 
-return (
+    return (
         <div className="container mb-5">
             <h2 className="text-warning mb-4 text-uppercase" style={{ textShadow: "0 0 10px #e3b324" }}>
                 {title}
@@ -38,18 +38,18 @@ return (
                 ) : (
                     safeData.map((item) => (
                         <div key={item.id} className="card bg-dark border-warning text-white flex-shrink-0" style={{ width: "18rem", boxShadow: "0 0 5px #444" }}>
-                            <img 
-                                src={`https://starwars-visualguide.com/assets/img/${getImgPath(type)}/${item.id}.jpg`} 
-                                className="card-img-top" 
+                            <img
+                                src={`/img/${getImgPath(type)}/${item.id}.jpg`}
+                                className="card-img-top"
                                 alt={item.name || item.title}
                                 style={{ height: "250px", objectFit: "cover", objectPosition: "top" }}
-                                onError={(e) => { e.target.src = "https://starwars-visualguide.com/assets/img/placeholder.jpg" }}
+                                onError={(e) => { e.target.src = "https://raw.githubusercontent.com/tbone849/star-wars-guide/master/build/assets/img/big-placeholder.jpg" }}
                             />
                             <div className="card-body">
                                 <h5 className="card-title text-warning fw-bold text-truncate">
                                     {item.name || item.title}
                                 </h5>
-                                
+
                                 <div className="card-text mb-3 small">
                                     {type === 'people' && <p className="m-0">Gender: {item.gender || "n/a"}</p>}
                                     {type === 'planet' && <p className="m-0">Population: {item.population || "n/a"}</p>}
@@ -63,11 +63,11 @@ return (
                                     <Link to={`/${type === 'people' ? 'people' : type + 's'}/${item.id}`} className="btn btn-outline-primary btn-sm">
                                         Learn more!
                                     </Link>
-                                    
-                                    <button 
+
+                                    <button
                                         className={`btn btn-sm ${isFav(item.id) ? "btn-warning" : "btn-outline-warning"}`}
-                                        onClick={() => isFav(item.id) 
-                                            ? actions.deleteFavorite(type, item.id) 
+                                        onClick={() => isFav(item.id)
+                                            ? actions.deleteFavorite(type, item.id)
                                             : actions.addFavorite(type, item.id)
                                         }
                                     >
@@ -86,25 +86,25 @@ return (
 export const Home = () => {
     const { store, actions } = useGlobalReducer();
 
-	const [modalData, setModalData] = useState({ 
-		show: false, 
-		item: null, 
-		type: null 
-	});
+    const [modalData, setModalData] = useState({
+        show: false,
+        item: null,
+        type: null
+    });
 
     useEffect(() => {
-        actions.loadAllStarWars(); 
+        actions.loadAllStarWars();
     }, []);
 
-	const handleCardClick = (item) => {
+    const handleCardClick = (item) => {
         setModalData({ show: true, item, type });
     };
 
-	const closeModal = () => setModalData({
-		show: false, 
-		item: null, 
-		type: null 
-	});
+    const closeModal = () => setModalData({
+        show: false,
+        item: null,
+        type: null
+    });
 
     return (
         <div className="container-fluid mt-4 pb-5 bg-black" style={{ minHeight: "100vh" }}>
@@ -114,12 +114,12 @@ export const Home = () => {
             <SectionRow title="Vehículos" data={store.vehicles} type="vehicle" actions={actions} favorites={store.favorites} />
             <SectionRow title="Especies" data={store.species} type="species" actions={actions} favorites={store.favorites} />
             <SectionRow title="Películas" data={store.films} type="film" actions={actions} favorites={store.favorites} />
-			<DetailsModal 
-				show={modalData.show} 
-				onClose={closeModal} 
-				item={modalData.item} 
-				type={modalData.type}
-			/>
+            <DetailsModal
+                show={modalData.show}
+                onClose={closeModal}
+                item={modalData.item}
+                type={modalData.type}
+            />
         </div>
     );
 };
